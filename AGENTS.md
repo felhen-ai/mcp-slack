@@ -11,7 +11,7 @@ globalRef: qmd://mcp-slack/AGENTS.md
 reviewCadenceDays: 90
 lastReviewedAt: 2026-09-28
 sourceRefs:
-  - github:antonio-mello-ai/mcp-slack
+  - github:felhen-ai/mcp-slack
 related:
   - README.md
   - docs/fluxos-negocio.md

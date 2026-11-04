@@ -31,7 +31,7 @@ Copy `.env.example` to `.env` and fill in your values.
 
 The `channel` parameter accepts a channel name (without `#`) or a public-channel
 ID beginning with `C`. Correct handling for other Slack conversation ID types is
-tracked in [Issue #8](https://github.com/antonio-mello-ai/mcp-slack/issues/8).
+tracked in [Issue #8](https://github.com/felhen-ai/mcp-slack/issues/8).
 
 ## Slack App Setup
 
@@ -47,7 +47,7 @@ tracked in [Issue #8](https://github.com/antonio-mello-ai/mcp-slack/issues/8).
    *Note: Private-channel access requires the corresponding `groups:*` scopes
    and bot membership. Direct-message and multi-party conversation support is
    not currently implemented; the supported conversation contract is tracked
-   in [Issue #8](https://github.com/antonio-mello-ai/mcp-slack/issues/8).*
+   in [Issue #8](https://github.com/felhen-ai/mcp-slack/issues/8).*
 
 3. Install the app to your workspace
 4. Copy the **Bot User OAuth Token** (`xoxb-...`) to `SLACK_BOT_TOKEN`
@@ -98,7 +98,7 @@ MIT
 - [Architecture](docs/arquitetura.md)
 - [Operations](docs/operacao.md)
 - [Documentation index](docs/index.md)
-- [Open roadmap items](https://github.com/antonio-mello-ai/mcp-slack/issues)
+- [Open roadmap items](https://github.com/felhen-ai/mcp-slack/issues)
 
 Priorities live in GitHub Issues and Projects. Delivery history lives in closed
 Issues, pull requests and GitHub Releases.
