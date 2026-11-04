@@ -73,7 +73,7 @@ requests targeting `main`.
 The repository currently has GitHub tags and releases, while the documented
 installation path is from a source checkout. The canonical version source,
 broken `VERSION`-file hook and supported publication path are tracked together
-in [Issue #12](https://github.com/antonio-mello-ai/mcp-slack/issues/12).
+in [Issue #12](https://github.com/felhen-ai/mcp-slack/issues/12).
 
 ## Failure modes
 

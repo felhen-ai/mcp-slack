@@ -34,7 +34,7 @@ and returns formatted names, IDs, topics, member counts and privacy markers.
 
 The current implementation accumulates the complete visible inventory before
 responding. Bounded pagination and reuse of channel discovery are tracked in
-[Issue #11](https://github.com/antonio-mello-ai/mcp-slack/issues/11).
+[Issue #11](https://github.com/felhen-ai/mcp-slack/issues/11).
 
 ## Read channel messages
 
@@ -44,11 +44,11 @@ the returned messages from oldest to newest using Slack timestamps and raw user
 IDs.
 
 - User display-name resolution is tracked in
-  [Issue #4](https://github.com/antonio-mello-ai/mcp-slack/issues/4).
+  [Issue #4](https://github.com/felhen-ai/mcp-slack/issues/4).
 - Reading thread replies is tracked in
-  [Issue #1](https://github.com/antonio-mello-ai/mcp-slack/issues/1).
+  [Issue #1](https://github.com/felhen-ai/mcp-slack/issues/1).
 - Conversation ID and DM/private-channel support alignment is tracked in
-  [Issue #8](https://github.com/antonio-mello-ai/mcp-slack/issues/8).
+  [Issue #8](https://github.com/felhen-ai/mcp-slack/issues/8).
 
 ## Post a message
 
@@ -59,10 +59,10 @@ the destination channel ID and Slack timestamp.
 
 Posting is an external side effect. Requiring an explicit destination contract
 is tracked in
-[Issue #9](https://github.com/antonio-mello-ai/mcp-slack/issues/9). Thread
+[Issue #9](https://github.com/felhen-ai/mcp-slack/issues/9). Thread
 replies and Block Kit are tracked in Issues
-[#1](https://github.com/antonio-mello-ai/mcp-slack/issues/1) and
-[#3](https://github.com/antonio-mello-ai/mcp-slack/issues/3).
+[#1](https://github.com/felhen-ai/mcp-slack/issues/1) and
+[#3](https://github.com/felhen-ai/mcp-slack/issues/3).
 
 ## Current boundaries
 
@@ -71,5 +71,5 @@ replies and Block Kit are tracked in Issues
 - The Slack client and configuration are initialized lazily and cached in
   process memory.
 - Tools return formatted text; structured MCP responses are tracked in
-  [Issue #14](https://github.com/antonio-mello-ai/mcp-slack/issues/14).
+  [Issue #14](https://github.com/felhen-ai/mcp-slack/issues/14).
 - The repository does not proxy or persist Slack workspace content.

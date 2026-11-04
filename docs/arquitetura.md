@@ -57,16 +57,16 @@ workspace membership. The tool-to-scope matrix is maintained in `README.md`.
 Channel listing and history calls are observational. `slack_post_message` calls
 Slack immediately and changes external state. Explicit MCP safety annotations
 are tracked in
-[Issue #13](https://github.com/antonio-mello-ai/mcp-slack/issues/13), while the
+[Issue #13](https://github.com/felhen-ai/mcp-slack/issues/13), while the
 explicit-destination contract is tracked in Issue #9.
 
 ## Resilience boundary
 
 The current client is created without custom retry handlers. Rate-limit and
 method-aware retry behavior are tracked in
-[Issue #2](https://github.com/antonio-mello-ai/mcp-slack/issues/2). Stable,
+[Issue #2](https://github.com/felhen-ai/mcp-slack/issues/2). Stable,
 redacted error mapping is tracked in
-[Issue #10](https://github.com/antonio-mello-ai/mcp-slack/issues/10).
+[Issue #10](https://github.com/felhen-ai/mcp-slack/issues/10).
 
 ## Known structural gaps
 
