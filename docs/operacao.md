@@ -9,7 +9,7 @@ status: current
 canonical: docs/operacao.md
 globalRef: qmd://mcp-slack/docs/operacao.md
 reviewCadenceDays: 90
-lastReviewedAt: 2026-09-28
+lastReviewedAt: 2026-11-17
 sourceRefs:
   - README.md
   - .env.example
@@ -33,8 +33,9 @@ uv sync --all-extras --all-groups
 
 Create a Slack App, grant only the scopes required by the tools in use, install
 it to the target workspace and inject `SLACK_BOT_TOKEN` from a local secret
-source. `SLACK_DEFAULT_CHANNEL` is optional. `.env.example` contains
-placeholders only.
+source. `.env.example` contains placeholders only. `SLACK_DEFAULT_CHANNEL` is
+no longer read: remove it from existing configurations and pass the destination
+in every `slack_post_message` call.
 
 ## Credential and content handling
 
@@ -53,8 +54,10 @@ uv run mcp-slack
 ```
 
 The process communicates over stdio. Keep stdout reserved for the MCP protocol.
-Before invoking `slack_post_message`, confirm the destination and content; the
-tool performs the external write immediately.
+Before invoking `slack_post_message`, confirm the resolved destination and the
+exact content with the requester; the tool performs the external write
+immediately. For a DM, identify the person with `slack_find_user` and review the
+conversation with `slack_read_channel` first.
 
 ## Validation
 
@@ -81,7 +84,9 @@ in [Issue #12](https://github.com/felhen-ai/mcp-slack/issues/12).
 | --- | --- |
 | Configuration fails before a tool call | Confirm `SLACK_BOT_TOKEN` is present without printing its value. |
 | `missing_scope` | Compare the failing tool with the scope matrix in `README.md`, update the app and reinstall it. |
-| Channel not found | Use an exact visible channel name or currently supported ID; see Issue #8. |
+| Channel not found | Use an exact visible channel name or a conversation ID; for a person use `@name`, an e-mail or a user ID. |
+| User name matches several members | Use the user ID or e-mail listed in the error. |
+| No direct message with a user yet | Expected when reading a DM that was never opened; posting opens it. |
 | Bot cannot read or post | Confirm bot membership and the relevant history or `chat:write` scope. |
 | Rate-limited or transient failure | Bounded retry behavior is tracked in Issue #2. |
 | Raw or unclear Slack API failure | Safe error normalization is tracked in Issue #10. |

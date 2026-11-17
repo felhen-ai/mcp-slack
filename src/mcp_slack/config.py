@@ -11,7 +11,6 @@ class SlackConfig:
     """Immutable Slack configuration."""
 
     bot_token: str
-    default_channel: str | None = None
 
     @classmethod
     def from_env(cls) -> SlackConfig:
@@ -24,9 +23,7 @@ class SlackConfig:
         if not bot_token:
             raise ValueError(
                 "SLACK_BOT_TOKEN environment variable is required. "
-                "Create a Slack App and set the Bot User OAuth Token (xoxb-...)."
+                "Create a Slack App and set its OAuth token (xoxb-... or xoxp-...)."
             )
 
-        default_channel = os.environ.get("SLACK_DEFAULT_CHANNEL", "").strip() or None
-
-        return cls(bot_token=bot_token, default_channel=default_channel)
+        return cls(bot_token=bot_token)
