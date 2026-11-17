@@ -9,7 +9,7 @@ status: current
 canonical: AGENTS.md
 globalRef: qmd://mcp-slack/AGENTS.md
 reviewCadenceDays: 90
-lastReviewedAt: 2026-09-28
+lastReviewedAt: 2026-11-17
 sourceRefs:
   - github:felhen-ai/mcp-slack
 related:
@@ -29,7 +29,8 @@ sensitivity: public
 ## Purpose
 
 This repository provides a public, self-hostable MCP server for listing Slack
-channels, reading channel messages and posting messages. Keep code, examples,
+channels, finding workspace members, reading channel and direct-message history
+and posting to channels or as direct messages. Keep code, examples,
 issues and documentation generic and safe for public collaboration.
 
 ## Public repository boundary
@@ -42,6 +43,9 @@ issues and documentation generic and safe for public collaboration.
 - Do not copy operational context from private deployments into this repository.
 - Treat `slack_post_message` as an external side effect. Tests must mock Slack
   APIs and must not post to live workspaces.
+- Keep the explicit-destination contract: no default destination, no fallback
+  when a destination is empty, unknown or ambiguous, and MCP safety annotations
+  on every tool (enforced by `tests/test_server.py`).
 
 ## Stack
 

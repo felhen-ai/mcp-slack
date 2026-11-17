@@ -9,7 +9,7 @@ status: current
 canonical: docs/arquitetura.md
 globalRef: qmd://mcp-slack/docs/arquitetura.md
 reviewCadenceDays: 90
-lastReviewedAt: 2026-09-28
+lastReviewedAt: 2026-11-17
 sourceRefs:
   - pyproject.toml
   - src/mcp_slack
@@ -28,9 +28,10 @@ sensitivity: public
 | Component | Responsibility |
 | --- | --- |
 | `server.py` | Creates the FastMCP server, imports the messaging module and starts stdio transport. |
-| `config.py` | Reads the required bot token and optional default channel from environment variables. |
+| `config.py` | Reads the required Slack token from environment variables. |
 | `client.py` | Lazily creates and caches the Slack configuration and asynchronous Web API client. |
-| `tools/messaging.py` | Implements channel listing, channel history, channel-name resolution and message posting. |
+| `conversations.py` | Resolves destinations (channel names, conversation IDs, users by name, e-mail or ID) into conversations, opening DMs when posting. |
+| `tools/messaging.py` | Implements channel listing, user lookup, conversation history and message posting, with MCP safety annotations. |
 
 ## Request path
 
@@ -49,16 +50,20 @@ only configuration and the SDK client are retained in process memory.
 ## Authentication and scope boundary
 
 `SLACK_BOT_TOKEN` enters through the environment and is passed to the Slack SDK.
-The bot sees only conversations and operations allowed by its OAuth scopes and
-workspace membership. The tool-to-scope matrix is maintained in `README.md`.
+The token fixes the acting identity: a bot token acts as the app's bot user, a
+user token as the authorizing person. The identity sees only conversations and
+operations allowed by its OAuth scopes and membership. The tool-to-scope matrix
+is maintained in `README.md`.
 
 ## Read and write boundary
 
-Channel listing and history calls are observational. `slack_post_message` calls
-Slack immediately and changes external state. Explicit MCP safety annotations
-are tracked in
-[Issue #13](https://github.com/felhen-ai/mcp-slack/issues/13), while the
-explicit-destination contract is tracked in Issue #9.
+Channel listing, user lookup and history calls are observational and carry
+read-only MCP annotations. Reading a person's DM uses `conversations.open` with
+`prevent_creation`, so it never creates a conversation. `slack_post_message` is
+annotated as a non-idempotent external write: it requires an explicit
+destination, resolves it completely before calling `chat.postMessage`, and
+fails without posting when the destination is empty, unknown or ambiguous.
+`tests/test_server.py` fails when a tool omits its safety annotations.
 
 ## Resilience boundary
 
@@ -71,7 +76,6 @@ redacted error mapping is tracked in
 ## Known structural gaps
 
 - Channel discovery and name resolution are unbounded; see Issue #11.
-- Non-public conversation ID handling does not match the documented contract;
-  see Issue #8.
+- Member lookup by name scans `users.list` on every call.
 - Responses are formatted strings rather than typed MCP content; see Issue #14.
 - The version hook references a removed file; see Issue #12.

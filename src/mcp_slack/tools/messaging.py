@@ -1,14 +1,37 @@
-"""Messaging tools: list channels, read messages, post messages."""
+"""Messaging tools: list channels, find users, read and post messages."""
 
 from __future__ import annotations
 
-from mcp_slack.client import get_client, get_config
+from mcp.types import ToolAnnotations
+
+from mcp_slack.client import get_client
+from mcp_slack.conversations import (
+    EMAIL_RE,
+    list_users,
+    resolve_conversation,
+    resolve_user,
+)
 from mcp_slack.server import mcp
 
+READ_ONLY = ToolAnnotations(
+    readOnlyHint=True,
+    destructiveHint=False,
+    idempotentHint=True,
+    openWorldHint=True,
+)
+EXTERNAL_WRITE = ToolAnnotations(
+    readOnlyHint=False,
+    destructiveHint=False,
+    idempotentHint=False,
+    openWorldHint=True,
+)
 
-@mcp.tool()
+_MAX_USER_RESULTS = 20
+
+
+@mcp.tool(annotations=READ_ONLY)
 async def slack_list_channels() -> str:
-    """List all Slack channels accessible by the bot.
+    """List all Slack channels accessible by the token.
 
     Returns a formatted list of channel names with their IDs and topics.
     """
@@ -46,90 +69,106 @@ async def slack_list_channels() -> str:
     return f"Found {len(channels)} channels:\n\n" + "\n".join(lines)
 
 
-@mcp.tool()
-async def slack_read_channel(channel: str, limit: int = 20) -> str:
-    """Read the last N messages from a Slack channel.
+@mcp.tool(annotations=READ_ONLY)
+async def slack_find_user(query: str) -> str:
+    """Search workspace members to identify the exact recipient of a DM.
+
+    Use this before slack_post_message to a person: confirm with the requester
+    which listed user is the intended recipient, then post using the user ID.
 
     Args:
-        channel: Channel name (without #) or channel ID.
+        query: An e-mail (exact lookup), or text matched case-insensitively
+            against the Slack handle, display name, real name and e-mail.
+    """
+    query = (query or "").strip()
+    if not query:
+        raise ValueError("A search query is required.")
+
+    if EMAIL_RE.match(query):
+        user = await resolve_user(query)
+        return f"Found 1 user:\n\n- {user.describe()}"
+
+    needle = query.removeprefix("@").casefold()
+    matches = [
+        user
+        for user in await list_users()
+        if any(needle in field.casefold() for field in (*user.names(), user.email))
+    ]
+
+    if not matches:
+        return f"No users match '{query}'."
+
+    lines = [f"- {u.describe()}" for u in matches[:_MAX_USER_RESULTS]]
+    header = f"Found {len(matches)} users"
+    if len(matches) > _MAX_USER_RESULTS:
+        header += f" (showing first {_MAX_USER_RESULTS}; refine the query)"
+    return f"{header}:\n\n" + "\n".join(lines)
+
+
+@mcp.tool(annotations=READ_ONLY)
+async def slack_read_channel(channel: str, limit: int = 20) -> str:
+    """Read the last N messages from a channel or direct message.
+
+    Use it to review a conversation, including the DM with a person, before
+    posting to it. Reading a DM never creates one.
+
+    Args:
+        channel: Destination: channel name (with or without #), conversation ID
+            (C…, G…, D…), @user, user e-mail or user ID (U…/W…) for the
+            direct message with that user.
         limit: Number of messages to retrieve (default: 20, max: 100).
     """
     client = get_client()
     limit = max(1, min(limit, 100))
 
-    channel_id = await _resolve_channel_id(channel)
+    conversation = await resolve_conversation(channel, create_dm=False)
 
-    response = await client.conversations_history(channel=channel_id, limit=limit)
+    response = await client.conversations_history(channel=conversation.id, limit=limit)
     messages = response.get("messages", [])
 
     if not messages:
-        return f"No messages found in <#{channel_id}>."
+        return f"No messages found in {conversation.label}."
 
     lines: list[str] = []
     for msg in reversed(messages):
-        user = msg.get("user", "unknown")
+        user = msg.get("user") or msg.get("bot_id") or "unknown"
         text = msg.get("text", "")
         ts = msg.get("ts", "")
         lines.append(f"[{ts}] <@{user}>: {text}")
 
-    return f"Last {len(messages)} messages from <#{channel_id}>:\n\n" + "\n".join(lines)
+    return f"Last {len(messages)} messages from {conversation.label}:\n\n" + "\n".join(
+        lines
+    )
 
 
-@mcp.tool()
+@mcp.tool(annotations=EXTERNAL_WRITE)
 async def slack_post_message(channel: str, text: str) -> str:
-    """Send a message to a Slack channel.
+    """Send a message to a channel or as a direct message to a person.
+
+    This is an external write performed immediately. Before calling it, the
+    caller MUST show the requester the exact resolved destination (channel or
+    person, e.g. from slack_find_user) and the exact text, and get explicit
+    confirmation. For a DM, review the conversation first with
+    slack_read_channel. The destination is required: there is no default
+    channel, and an unknown or ambiguous destination fails without posting.
+    The message is sent as the identity that owns the configured token.
 
     Args:
-        channel: Channel name (without #) or channel ID.
-        text: The message text to send. Supports Slack markdown.
+        channel: Destination: channel name (with or without #), conversation ID
+            (C…, G…, D…), @user, user e-mail or user ID (U…/W…). Prefer IDs
+            once the destination has been confirmed.
+        text: The message text to send. Supports Slack mrkdwn.
     """
+    if not (text or "").strip():
+        raise ValueError("Message text is required.")
+
+    conversation = await resolve_conversation(channel, create_dm=True)
+
     client = get_client()
-    config = get_config()
-
-    resolved_channel = channel or config.default_channel
-    if not resolved_channel:
-        return "Error: No channel specified and SLACK_DEFAULT_CHANNEL is not set."
-
-    channel_id = await _resolve_channel_id(resolved_channel)
-
-    response = await client.chat_postMessage(channel=channel_id, text=text)
+    response = await client.chat_postMessage(channel=conversation.id, text=text)
     ts = response.get("ts", "unknown")
+    posted_to = response.get("channel", conversation.id)
 
-    return f"Message sent to <#{channel_id}> (ts: {ts})."
-
-
-async def _resolve_channel_id(channel: str) -> str:
-    """Resolve a channel name to its ID. If already an ID, return as-is.
-
-    Args:
-        channel: Channel name (without #) or channel ID.
-
-    Returns:
-        The Slack channel ID.
-
-    Raises:
-        ValueError: If the channel cannot be found.
-    """
-    if channel.startswith("C") and len(channel) >= 9 and channel[1:].isalnum():
-        return channel
-
-    client = get_client()
-    cursor: str | None = None
-
-    while True:
-        kwargs: dict = {"types": "public_channel,private_channel", "limit": 200}
-        if cursor:
-            kwargs["cursor"] = cursor
-
-        response = await client.conversations_list(**kwargs)
-        for ch in response.get("channels", []):
-            if ch.get("name") == channel:
-                return ch["id"]
-
-        cursor = response.get("response_metadata", {}).get("next_cursor")
-        if not cursor:
-            break
-
-    raise ValueError(
-        f"Channel '{channel}' not found. Use the channel ID or exact name."
+    return (
+        f"Message sent to {conversation.label} (conversation: {posted_to}, ts: {ts})."
     )

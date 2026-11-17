@@ -9,7 +9,7 @@ status: current
 canonical: docs/index.md
 globalRef: qmd://mcp-slack/docs/index.md
 reviewCadenceDays: 90
-lastReviewedAt: 2026-09-28
+lastReviewedAt: 2026-11-17
 sourceRefs:
   - AGENTS.md
   - README.md
@@ -30,7 +30,7 @@ sensitivity: public
 
 ## Active documentation kit
 
-- [Product flows](fluxos-negocio.md) — current channel read and message-posting behavior
+- [Product flows](fluxos-negocio.md) — destinations, user lookup, channel and DM reading, and message posting
 - [Architecture](arquitetura.md) — components, request path and safety boundaries
 - [Operations](operacao.md) — credentials, scopes, validation, release and troubleshooting
 
